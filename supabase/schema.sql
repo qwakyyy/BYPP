@@ -54,10 +54,11 @@ create table if not exists song_sessions (
   unique (song_id, session_type)
 );
 
--- 합주 후보 시간은 timezone 없는 "동아리 현지 시간"으로 그대로 저장/표시한다 (UTC 변환 버그 방지)
+-- 합주 일정은 공연 전체가 아니라 곡 단위다 (곡마다 참여 멤버가 다르므로).
+-- timezone 없는 "동아리 현지 시간"으로 그대로 저장/표시한다 (UTC 변환 버그 방지)
 create table if not exists rehearsal_slots (
   id uuid primary key default gen_random_uuid(),
-  performance_id uuid not null references performances (id) on delete cascade,
+  song_id uuid not null references songs (id) on delete cascade,
   starts_at timestamp not null,
   ends_at timestamp not null
 );
@@ -88,5 +89,6 @@ create policy "availabilities readable" on availabilities for select using (true
 -- Realtime 구독 대상 (RealtimeRefresher가 이 테이블들의 변경을 구독한다)
 alter publication supabase_realtime add table songs;
 alter publication supabase_realtime add table song_sessions;
+alter publication supabase_realtime add table rehearsal_slots;
 alter publication supabase_realtime add table availabilities;
 

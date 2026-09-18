@@ -130,12 +130,12 @@ export async function getSongWithSessions(songId: string): Promise<Song | null> 
   };
 }
 
-export async function getRehearsalSlots(performanceId: string): Promise<RehearsalSlot[]> {
+export async function getRehearsalSlotsForSong(songId: string): Promise<RehearsalSlot[]> {
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("rehearsal_slots")
     .select("*")
-    .eq("performance_id", performanceId)
+    .eq("song_id", songId)
     .order("starts_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as RehearsalSlot[];

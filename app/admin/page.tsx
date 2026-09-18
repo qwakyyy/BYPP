@@ -1,7 +1,7 @@
 import { getSession, isOfficer } from "@/lib/auth";
 import { getCurrentPerformance } from "@/lib/queries";
 import { PHASE_LABEL } from "@/lib/types";
-import { PerformanceForm, InviteCodeForm, SlotForm } from "@/components/AdminForms";
+import { PerformanceForm, InviteCodeForm } from "@/components/AdminForms";
 import PhaseControls from "@/components/PhaseControls";
 
 export default async function AdminPage() {
@@ -28,7 +28,6 @@ export default async function AdminPage() {
 
       <PerformanceForm />
       <InviteCodeForm />
-      {performance && <SlotForm />}
     </div>
   );
 }

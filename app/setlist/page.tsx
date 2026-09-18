@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getCurrentPerformance, getSongsWithSessions } from "@/lib/queries";
 import { computeSetlist } from "@/lib/setlist";
 import RealtimeRefresher from "@/components/RealtimeRefresher";
@@ -34,10 +35,17 @@ export default async function SetlistPage() {
             return (
               <li key={song.id} className="rounded border bg-white px-4 py-3">
                 <span className="mr-2 text-gray-400">{i + 1}.</span>
-                {song.title}
+                <Link href={`/songs/${song.id}`} className="font-medium hover:underline">
+                  {song.title}
+                </Link>
                 <span className="ml-2 text-xs text-gray-500">
                   {song.sessions.map((s) => `${s.session_type}: ${s.member_name ?? "-"}`).join(" / ")}
                 </span>
+                {performance.phase === "scheduling" && (
+                  <Link href={`/songs/${song.id}`} className="ml-2 text-xs text-blue-600 underline">
+                    합주 일정 잡기
+                  </Link>
+                )}
               </li>
             );
           })}

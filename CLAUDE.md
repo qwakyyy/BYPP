@@ -18,10 +18,10 @@
 2. `session_signup_phase1` (1일) — 세션 선착순 신청, 1인당 최대 2곡(`max_songs_per_member_phase1`)
 3. `session_signup_phase2` (1일) — 인원 제한 없이 선착순 신청
 4. `setlist_locked` — 세션이 다 찬 곡을 `completed_at` 순으로 정렬, `max_setlist_size`까지 확정
-5. `scheduling` — 미니 when2meet으로 합주 시간 조율
+5. `scheduling` — 곡마다 참여 멤버가 다르므로, **곡 단위**로 미니 when2meet 진행 (공연 전체 공용 일정 아님)
 
 ## 페이지
-- `/login`, `/` (대시보드), `/songs`, `/songs/[id]`, `/setlist`, `/schedule`, `/admin`
+- `/login`, `/` (대시보드), `/songs`, `/songs/[id]` (세션 신청 + 그 곡 확정 시 합주 일정 포함), `/setlist`, `/admin`
 
 ## 설계 원칙 (Next.js 16 관련 주의)
 - `middleware.ts`가 아니라 **`proxy.ts`** 사용 (Next 16에서 이름 변경, export도 `proxy`)
@@ -29,3 +29,4 @@
 - 세션 신청 동시성은 `UPDATE ... WHERE member_id IS NULL` 단일 SQL로 원자 처리 (별도 락 불필요)
 - 브라우저에는 Supabase anon key만 노출, 모든 쓰기는 Server Action에서 service role key로 수행
 - 상세 설계는 이전 계획 문서 참고 (역할별 권한, 데이터 모델, phase 전이 규칙)
+- `rehearsal_slots`/`availabilities`는 `song_id` 기준 — 그 곡에 세션으로 참여한 멤버(+회장단)만 후보 시간 추가/응답 가능 (`app/actions/schedule.ts`의 `isSongMember` 체크)

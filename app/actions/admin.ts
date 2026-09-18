@@ -66,7 +66,6 @@ export async function advancePhaseAction(nextPhase: Phase): Promise<AdminActionS
   revalidatePath("/admin");
   revalidatePath("/songs");
   revalidatePath("/setlist");
-  revalidatePath("/schedule");
   return {};
 }
 
@@ -87,33 +86,5 @@ export async function issueInviteCodeAction(
   if (error) return { error: "발급 실패: " + error.message };
 
   revalidatePath("/admin");
-  return {};
-}
-
-export type CreateSlotState = { error?: string };
-
-export async function createRehearsalSlotAction(
-  _prev: CreateSlotState,
-  formData: FormData
-): Promise<CreateSlotState> {
-  await requireOfficer();
-
-  const startsAt = String(formData.get("starts_at") ?? "").trim();
-  const endsAt = String(formData.get("ends_at") ?? "").trim();
-  if (!startsAt || !endsAt) return { error: "시작/종료 시간을 입력해주세요" };
-
-  const performance = await getCurrentPerformance();
-  if (!performance) return { error: "먼저 공연을 만들어주세요" };
-
-  const supabase = createServiceClient();
-  const { error } = await supabase.from("rehearsal_slots").insert({
-    performance_id: performance.id,
-    starts_at: startsAt,
-    ends_at: endsAt,
-  });
-  if (error) return { error: error.message };
-
-  revalidatePath("/admin");
-  revalidatePath("/schedule");
   return {};
 }

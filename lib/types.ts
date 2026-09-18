@@ -71,7 +71,7 @@ export type Song = {
 
 export type RehearsalSlot = {
   id: string;
-  performance_id: string;
+  song_id: string;
   starts_at: string;
   ends_at: string;
 };

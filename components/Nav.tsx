@@ -13,7 +13,6 @@ export default async function Nav() {
     { href: "/", label: "홈" },
     { href: "/songs", label: "곡 신청" },
     { href: "/setlist", label: "셋리스트" },
-    { href: "/schedule", label: "합주 일정" },
   ];
   if (isOfficer(session.role)) links.push({ href: "/admin", label: "관리" });
 
