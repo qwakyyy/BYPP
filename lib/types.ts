@@ -62,11 +62,12 @@ export const SESSION_TYPES = ["보컬", "기타1", "기타2", "베이스", "드�
 /** 보컬은 악보 링크가 필요 없다 */
 export const VOCAL_SESSION_TYPE = "보컬";
 
-export const SESSION_CATEGORIES = ["전체", "기타", "베이스", "건반", "드럼", "그 외"] as const;
+export const SESSION_CATEGORIES = ["전체", "보컬", "기타", "베이스", "건반", "드럼", "그 외"] as const;
 export type SessionCategory = (typeof SESSION_CATEGORIES)[number];
 
 /** 세션 이름을 필터 카테고리로 묶는다 (기타1/기타2는 "기타"로 합침) */
 export function categorize(sessionType: string): Exclude<SessionCategory, "전체"> {
+  if (sessionType === VOCAL_SESSION_TYPE) return "보컬";
   if (sessionType === "기타1" || sessionType === "기타2") return "기타";
   if (sessionType === "베이스") return "베이스";
   if (sessionType === "건반") return "건반";

@@ -31,7 +31,15 @@ export default async function Nav() {
           rel="noreferrer"
           className="text-gray-700 hover:text-black"
         >
-          참고 스프레드시트
+          얼방 대관
+        </a>
+        <a
+          href="https://drive.google.com/drive/folders/1gCvTrfbjRu13hMe4hUbRdiBKypelmRPd"
+          target="_blank"
+          rel="noreferrer"
+          className="text-gray-700 hover:text-black"
+        >
+          악보 아카이브
         </a>
         <span className="ml-auto text-gray-500">{member?.name ?? "멤버"}</span>
         <form action={logoutAction}>
