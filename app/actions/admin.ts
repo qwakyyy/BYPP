@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getSession, isOfficer, type Role } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentPerformance } from "@/lib/queries";
-import { PHASE_ORDER, type Phase } from "@/lib/types";
+import { kstLocalToIso } from "@/lib/datetime";
+import { PHASE_ORDER, SCHEDULABLE_PHASES, type Phase } from "@/lib/types";
 
 async function requireOfficer() {
   const session = await getSession();
@@ -79,12 +80,48 @@ export async function issueInviteCodeAction(
 
   const code = String(formData.get("code") ?? "").trim();
   const role = String(formData.get("role") ?? "member") as Role;
+  const generationRaw = String(formData.get("generation") ?? "").trim();
   if (!code) return { error: "코드를 입력해주세요" };
 
   const supabase = createServiceClient();
-  const { error } = await supabase.from("invite_codes").insert({ code, role });
+  const { error } = await supabase
+    .from("invite_codes")
+    .insert({ code, role, generation: generationRaw ? Number(generationRaw) : 1 });
   if (error) return { error: "발급 실패: " + error.message };
 
   revalidatePath("/admin");
+  return {};
+}
+
+export type SetPhaseWindowsState = { error?: string };
+
+export async function setPhaseWindowsAction(
+  _prev: SetPhaseWindowsState,
+  formData: FormData
+): Promise<SetPhaseWindowsState> {
+  await requireOfficer();
+
+  const performance = await getCurrentPerformance();
+  if (!performance) return { error: "먼저 공연을 만들어주세요" };
+
+  const rows = SCHEDULABLE_PHASES.map((phase) => {
+    const startsRaw = String(formData.get(`starts_${phase}`) ?? "").trim();
+    const endsRaw = String(formData.get(`ends_${phase}`) ?? "").trim();
+    return {
+      performance_id: performance.id,
+      phase,
+      starts_at: startsRaw ? kstLocalToIso(startsRaw) : null,
+      ends_at: endsRaw ? kstLocalToIso(endsRaw) : null,
+    };
+  });
+
+  const supabase = createServiceClient();
+  const { error } = await supabase
+    .from("phase_windows")
+    .upsert(rows, { onConflict: "performance_id,phase" });
+  if (error) return { error: error.message };
+
+  revalidatePath("/admin");
+  revalidatePath("/");
   return {};
 }

@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { submitSongAction, type SubmitSongState } from "@/app/actions/songs";
-import { SESSION_TYPES } from "@/lib/types";
+import { SESSION_TYPES, VOCAL_SESSION_TYPE } from "@/lib/types";
 
 const initialState: SubmitSongState = {};
 
@@ -15,6 +15,10 @@ export default function SongForm() {
         곡 제목
         <input name="title" required className="rounded border px-3 py-2" />
       </label>
+      <label className="flex flex-col gap-1 text-sm">
+        아티스트
+        <input name="artist" placeholder="선택" className="rounded border px-3 py-2" />
+      </label>
 
       <p className="text-sm font-medium">필요한 세션 (체크 + 악보 링크)</p>
       {SESSION_TYPES.map((type) => (
@@ -23,11 +27,13 @@ export default function SongForm() {
             <input type="checkbox" name={`use_${type}`} />
             {type}
           </label>
-          <input
-            name={`url_${type}`}
-            placeholder="악보 링크 (선택)"
-            className="flex-1 rounded border px-2 py-1 text-sm"
-          />
+          {type !== VOCAL_SESSION_TYPE && (
+            <input
+              name={`url_${type}`}
+              placeholder="악보 링크 (선택)"
+              className="flex-1 rounded border px-2 py-1 text-sm"
+            />
+          )}
         </div>
       ))}
 

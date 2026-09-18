@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { getSession } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentPerformance } from "@/lib/queries";
-import { SESSION_TYPES } from "@/lib/types";
+import { SESSION_TYPES, VOCAL_SESSION_TYPE } from "@/lib/types";
 
 export type SubmitSongState = { error?: string };
 
@@ -22,12 +22,17 @@ export async function submitSongAction(
 
   const title = String(formData.get("title") ?? "").trim();
   if (!title) return { error: "곡 제목을 입력해주세요" };
+  const artist = String(formData.get("artist") ?? "").trim();
 
   const rows: { session_type: string; sheet_music_url: string | null }[] = [];
   for (const type of SESSION_TYPES) {
     if (formData.get(`use_${type}`) === "on") {
-      const url = String(formData.get(`url_${type}`) ?? "").trim();
-      rows.push({ session_type: type, sheet_music_url: url || null });
+      if (type === VOCAL_SESSION_TYPE) {
+        rows.push({ session_type: type, sheet_music_url: null });
+      } else {
+        const url = String(formData.get(`url_${type}`) ?? "").trim();
+        rows.push({ session_type: type, sheet_music_url: url || null });
+      }
     }
   }
   const customType = String(formData.get("custom_type") ?? "").trim();
@@ -41,7 +46,12 @@ export async function submitSongAction(
   const supabase = createServiceClient();
   const { data: song, error: songError } = await supabase
     .from("songs")
-    .insert({ performance_id: performance.id, title, submitted_by: session.memberId })
+    .insert({
+      performance_id: performance.id,
+      title,
+      artist: artist || null,
+      submitted_by: session.memberId,
+    })
     .select("id")
     .single();
   if (songError) return { error: "등록 실패: " + songError.message };

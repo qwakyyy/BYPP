@@ -22,6 +22,9 @@ export default async function SongsPage() {
           <SongForm />
         </section>
       )}
+      {performance.phase !== "draft" && performance.phase !== "song_submission" && (
+        <p className="text-sm text-gray-500">곡 등록 기간이 종료됐어요.</p>
+      )}
 
       <section>
         <h2 className="mb-2 text-base font-semibold">등록된 곡 ({songs.length})</h2>
@@ -36,7 +39,8 @@ export default async function SongsPage() {
                   className="flex items-center justify-between rounded border bg-white px-4 py-3 hover:bg-gray-50"
                 >
                   <span>
-                    {song.title}{" "}
+                    {song.title}
+                    {song.artist && <span className="text-gray-500"> - {song.artist}</span>}{" "}
                     {song.completed_at && (
                       <span className="ml-1 text-xs text-green-700">완성</span>
                     )}

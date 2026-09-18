@@ -60,7 +60,10 @@ export default async function SongDetailPage(props: PageProps<"/songs/[id]">) {
       <RealtimeRefresher table="song_sessions" filter={`song_id=eq.${song.id}`} />
 
       <div>
-        <h1 className="text-lg font-semibold">{song.title}</h1>
+        <h1 className="text-lg font-semibold">
+          {song.title}
+          {song.artist && <span className="text-gray-500"> - {song.artist}</span>}
+        </h1>
         <p className="text-sm text-gray-500">
           등록: {song.submitted_by_name ?? "알 수 없음"}
           {song.completed_at && <span className="ml-2 text-green-700">전 세션 완료</span>}

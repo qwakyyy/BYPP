@@ -1,7 +1,8 @@
 import { getSession, isOfficer } from "@/lib/auth";
-import { getCurrentPerformance } from "@/lib/queries";
-import { PHASE_LABEL } from "@/lib/types";
-import { PerformanceForm, InviteCodeForm } from "@/components/AdminForms";
+import { getCurrentPerformance, getPhaseWindows } from "@/lib/queries";
+import { isoToKstLocalInput } from "@/lib/datetime";
+import { PHASE_LABEL, SCHEDULABLE_PHASES, type Phase } from "@/lib/types";
+import { PerformanceForm, InviteCodeForm, PhaseWindowsForm } from "@/components/AdminForms";
 import PhaseControls from "@/components/PhaseControls";
 
 export default async function AdminPage() {
@@ -11,6 +12,20 @@ export default async function AdminPage() {
   }
 
   const performance = await getCurrentPerformance();
+
+  let initialWindows: Partial<Record<Phase, { starts: string; ends: string }>> = {};
+  if (performance) {
+    const windows = await getPhaseWindows(performance.id);
+    initialWindows = Object.fromEntries(
+      SCHEDULABLE_PHASES.map((phase) => [
+        phase,
+        {
+          starts: windows[phase]?.startsAt ? isoToKstLocalInput(windows[phase]!.startsAt!) : "",
+          ends: windows[phase]?.endsAt ? isoToKstLocalInput(windows[phase]!.endsAt!) : "",
+        },
+      ])
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -27,6 +42,7 @@ export default async function AdminPage() {
       )}
 
       <PerformanceForm />
+      {performance && <PhaseWindowsForm initial={initialWindows} />}
       <InviteCodeForm />
     </div>
   );

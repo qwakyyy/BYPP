@@ -31,13 +31,31 @@ export const PHASE_LABEL: Record<Phase, string> = {
   done: "종료",
 };
 
+/** 일정을 admin이 미리 설정해서 자동 전환을 걸 수 있는 phase들 (draft/setlist_locked/done 제외) */
+export const SCHEDULABLE_PHASES: Phase[] = [
+  "song_submission",
+  "session_signup_phase1",
+  "session_signup_phase2",
+  "scheduling",
+];
+
+export const ROLE_LABEL: Record<Role, string> = {
+  president: "회장",
+  vice_president: "부회장",
+  member: "멤버",
+};
+
 export const SESSION_TYPES = ["보컬", "기타1", "기타2", "베이스", "드럼", "건반"] as const;
+
+/** 보컬은 악보 링크가 필요 없다 */
+export const VOCAL_SESSION_TYPE = "보컬";
 
 export type Member = {
   id: string;
   name: string;
   instrument: string;
   role: Role;
+  generation: number;
 };
 
 export type Performance = {
@@ -47,6 +65,12 @@ export type Performance = {
   phase: Phase;
   max_setlist_size: number | null;
   max_songs_per_member_phase1: number;
+};
+
+export type PhaseWindow = {
+  phase: Phase;
+  starts_at: string | null;
+  ends_at: string | null;
 };
 
 export type SongSession = {
@@ -63,6 +87,7 @@ export type Song = {
   id: string;
   performance_id: string;
   title: string;
+  artist: string | null;
   submitted_by: string;
   submitted_by_name: string | null;
   completed_at: string | null;

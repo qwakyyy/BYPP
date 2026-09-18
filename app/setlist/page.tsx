@@ -37,6 +37,7 @@ export default async function SetlistPage() {
                 <span className="mr-2 text-gray-400">{i + 1}.</span>
                 <Link href={`/songs/${song.id}`} className="font-medium hover:underline">
                   {song.title}
+                  {song.artist && <span className="text-gray-500"> - {song.artist}</span>}
                 </Link>
                 <span className="ml-2 text-xs text-gray-500">
                   {song.sessions.map((s) => `${s.session_type}: ${s.member_name ?? "-"}`).join(" / ")}
@@ -66,6 +67,7 @@ export default async function SetlistPage() {
               return (
                 <li key={song.id} className="rounded border bg-gray-100 px-4 py-3 text-gray-500">
                   {song.title}
+                  {song.artist && <span> - {song.artist}</span>}
                 </li>
               );
             })}

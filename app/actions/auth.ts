@@ -35,7 +35,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
 
   const { data: created, error: insertError } = await supabase
     .from("members")
-    .insert({ name, instrument, role: invite.role as Role })
+    .insert({ name, instrument, role: invite.role as Role, generation: invite.generation })
     .select("*")
     .single();
   if (insertError) return { error: "가입 실패: " + insertError.message };

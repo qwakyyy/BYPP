@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { getCurrentPerformance } from "@/lib/queries";
+import { getCurrentPerformance, getPhaseWindows } from "@/lib/queries";
+import { formatKst } from "@/lib/datetime";
 import { PHASE_LABEL } from "@/lib/types";
 
 const PHASE_LINKS: Record<string, { href: string; label: string }> = {
@@ -7,7 +8,7 @@ const PHASE_LINKS: Record<string, { href: string; label: string }> = {
   session_signup_phase1: { href: "/songs", label: "세션 신청하러 가기" },
   session_signup_phase2: { href: "/songs", label: "세션 신청하러 가기" },
   setlist_locked: { href: "/setlist", label: "셋리스트 보기" },
-  scheduling: { href: "/schedule", label: "합주 가능 시간 입력하기" },
+  scheduling: { href: "/setlist", label: "셋리스트에서 합주 일정 잡기" },
   done: { href: "/setlist", label: "지난 셋리스트 보기" },
 };
 
@@ -23,6 +24,8 @@ export default async function DashboardPage() {
   }
 
   const action = PHASE_LINKS[performance.phase];
+  const windows = await getPhaseWindows(performance.id);
+  const currentWindow = windows[performance.phase];
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,6 +37,11 @@ export default async function DashboardPage() {
         <p className="mt-2 inline-block rounded bg-gray-100 px-2 py-1 text-sm">
           현재 단계: {PHASE_LABEL[performance.phase]}
         </p>
+        {currentWindow?.endsAt && (
+          <p className="mt-1 text-sm text-gray-500">
+            마감: {formatKst(currentWindow.endsAt)}
+          </p>
+        )}
       </div>
 
       {action && (
