@@ -18,7 +18,7 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
 
   const existing = await getMemberByName(name);
   if (existing) {
-    await createSessionCookie(existing.id, existing.role);
+    await createSessionCookie(existing.id, existing.role, existing.is_admin);
     redirect("/");
   }
 
@@ -35,12 +35,18 @@ export async function loginAction(_prevState: LoginState, formData: FormData): P
 
   const { data: created, error: insertError } = await supabase
     .from("members")
-    .insert({ name, instrument, role: invite.role as Role, generation: invite.generation })
+    .insert({
+      name,
+      instrument,
+      role: invite.role as Role,
+      generation: invite.generation,
+      is_admin: invite.is_admin,
+    })
     .select("*")
     .single();
   if (insertError) return { error: "가입 실패: " + insertError.message };
 
-  await createSessionCookie(created.id, created.role as Role);
+  await createSessionCookie(created.id, created.role as Role, created.is_admin);
   redirect("/");
 }
 

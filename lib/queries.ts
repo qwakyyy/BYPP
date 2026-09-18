@@ -35,13 +35,13 @@ export async function getPhaseWindows(performanceId: string): Promise<PhaseWindo
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("phase_windows")
-    .select("phase, starts_at, ends_at")
+    .select("phase, starts_at")
     .eq("performance_id", performanceId);
   if (error) throw error;
 
   const map: PhaseWindowMap = {};
   for (const row of data ?? []) {
-    map[row.phase as Phase] = { startsAt: row.starts_at, endsAt: row.ends_at };
+    map[row.phase as Phase] = { startsAt: row.starts_at };
   }
   return map;
 }
@@ -155,7 +155,7 @@ export async function getRehearsalSlotsForSong(songId: string): Promise<Rehearsa
   const supabase = createServiceClient();
   const { data, error } = await supabase
     .from("rehearsal_slots")
-    .select("*")
+    .select("id, song_id, starts_at")
     .eq("song_id", songId)
     .order("starts_at", { ascending: true });
   if (error) throw error;

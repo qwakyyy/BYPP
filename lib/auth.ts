@@ -5,6 +5,7 @@ export type Role = "president" | "vice_president" | "member";
 export type SessionPayload = {
   memberId: string;
   role: Role;
+  isAdmin: boolean;
   exp: number; // epoch ms
 };
 
@@ -71,8 +72,8 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
   return verify(token, getSecret());
 }
 
-export async function createSessionCookie(memberId: string, role: Role) {
-  const payload: SessionPayload = { memberId, role, exp: Date.now() + SESSION_TTL_MS };
+export async function createSessionCookie(memberId: string, role: Role, isAdmin: boolean) {
+  const payload: SessionPayload = { memberId, role, isAdmin, exp: Date.now() + SESSION_TTL_MS };
   const token = await sign(payload, getSecret());
   const store = await cookies();
   store.set(COOKIE_NAME, token, {
@@ -95,10 +96,6 @@ export async function getSession(): Promise<SessionPayload | null> {
   const token = store.get(COOKIE_NAME)?.value;
   if (!token) return null;
   return verify(token, getSecret());
-}
-
-export function isOfficer(role: Role): boolean {
-  return role === "president" || role === "vice_president";
 }
 
 export const SESSION_COOKIE_NAME = COOKIE_NAME;

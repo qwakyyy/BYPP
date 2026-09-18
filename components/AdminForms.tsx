@@ -9,7 +9,7 @@ import {
   type IssueInviteState,
   type SetPhaseWindowsState,
 } from "@/app/actions/admin";
-import { SCHEDULABLE_PHASES, PHASE_LABEL, type Phase } from "@/lib/types";
+import { SCHEDULABLE_PHASES, PHASE_SHORT_LABEL, type Phase } from "@/lib/types";
 
 export function PerformanceForm() {
   const [state, formAction, pending] = useActionState<AdminActionState, FormData>(
@@ -70,6 +70,10 @@ export function InviteCodeForm() {
         placeholder="기수 (예: 5)"
         className="rounded border px-3 py-2 text-sm"
       />
+      <label className="flex items-center gap-2 text-sm text-gray-600">
+        <input type="checkbox" name="is_admin" />
+        관리자 권한도 부여 (회장/부회장이 아니어도 관리 페이지 접근 가능)
+      </label>
       <button
         type="submit"
         disabled={pending}
@@ -82,11 +86,7 @@ export function InviteCodeForm() {
   );
 }
 
-export function PhaseWindowsForm({
-  initial,
-}: {
-  initial: Partial<Record<Phase, { starts: string; ends: string }>>;
-}) {
+export function PhaseWindowsForm({ initial }: { initial: Partial<Record<Phase, string>> }) {
   const [state, formAction, pending] = useActionState<SetPhaseWindowsState, FormData>(
     setPhaseWindowsAction,
     {}
@@ -95,35 +95,26 @@ export function PhaseWindowsForm({
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded border bg-white p-4">
       <div>
-        <h3 className="text-sm font-semibold">단계별 일정</h3>
+        <h3 className="text-sm font-semibold">단계 전환 시각</h3>
         <p className="text-xs text-gray-500">
-          시작 시각을 설정하면 그 시각이 지난 뒤 누군가 사이트에 들어올 때 자동으로 다음 단계로
-          넘어가요. 비워두면 위의 &ldquo;다음 단계로&rdquo; 버튼으로 수동 전환해야 해요.
+          각 단계가 시작되는 시각(= 바로 앞 단계가 끝나는 시각)만 정하면 돼요. 설정하면 그 시각이
+          지난 뒤 누군가 사이트에 들어올 때 자동으로 넘어가고, 비워두면 위의 &ldquo;다음
+          단계로&rdquo; 버튼으로 수동 전환해야 해요.
         </p>
       </div>
       {SCHEDULABLE_PHASES.map((phase) => (
         <div key={phase} className="flex flex-wrap items-end gap-2 border-t pt-2 first:border-t-0 first:pt-0">
-          <span className="w-40 text-xs text-gray-600">{PHASE_LABEL[phase]}</span>
-          <label className="flex flex-col gap-1 text-xs text-gray-500">
-            시작
-            <input
-              type="datetime-local"
-              name={`starts_${phase}`}
-              defaultValue={initial[phase]?.starts ?? ""}
-              className="rounded border px-2 py-1 text-sm"
-            />
-          </label>
-          <label className="flex flex-col gap-1 text-xs text-gray-500">
-            종료
-            <input
-              type="datetime-local"
-              name={`ends_${phase}`}
-              defaultValue={initial[phase]?.ends ?? ""}
-              className="rounded border px-2 py-1 text-sm"
-            />
-          </label>
-          {phase === "session_signup_phase2" && (
-            <span className="text-xs text-gray-400">종료 시각에 셋리스트가 자동 확정돼요</span>
+          <span className="w-32 text-xs text-gray-600">{PHASE_SHORT_LABEL[phase]} 시작</span>
+          <input
+            type="datetime-local"
+            name={`starts_${phase}`}
+            defaultValue={initial[phase] ?? ""}
+            className="rounded border px-2 py-1 text-sm"
+          />
+          {phase === "scheduling" && (
+            <span className="text-xs text-gray-400">
+              이 시각에 2차 신청 마감 + 셋리스트 확정도 같이 돼요
+            </span>
           )}
         </div>
       ))}

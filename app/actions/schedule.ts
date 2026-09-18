@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession, isOfficer } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase/server";
 
 async function isSongMember(songId: string, memberId: string): Promise<boolean> {
@@ -16,9 +16,15 @@ async function isSongMember(songId: string, memberId: string): Promise<boolean> 
   return (data ?? []).length > 0;
 }
 
+/** "YYYY-MM-DD" 날짜 하나에 대해 0시~24시까지 1시간 단위 후보 슬롯 24개를 만든다. */
+function hourlyStartsForDate(dateStr: string): string[] {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return Array.from({ length: 24 }, (_, hour) => `${dateStr}T${pad(hour)}:00:00`);
+}
+
 export type CreateSlotState = { error?: string };
 
-export async function createSongSlotAction(
+export async function addRehearsalDateAction(
   _prev: CreateSlotState,
   formData: FormData
 ): Promise<CreateSlotState> {
@@ -26,54 +32,52 @@ export async function createSongSlotAction(
   if (!session) return { error: "로그인이 필요해요" };
 
   const songId = String(formData.get("song_id") ?? "");
-  const startsAt = String(formData.get("starts_at") ?? "").trim();
-  const endsAt = String(formData.get("ends_at") ?? "").trim();
-  if (!startsAt || !endsAt) return { error: "시작/종료 시간을 입력해주세요" };
+  const date = String(formData.get("date") ?? "").trim();
+  if (!date) return { error: "날짜를 선택해주세요" };
 
-  if (!isOfficer(session.role) && !(await isSongMember(songId, session.memberId))) {
-    return { error: "이 곡에 참여한 멤버만 시간을 추가할 수 있어요" };
+  if (!session.isAdmin && !(await isSongMember(songId, session.memberId))) {
+    return { error: "이 곡에 참여한 멤버만 날짜를 추가할 수 있어요" };
   }
 
   const supabase = createServiceClient();
-  const { error } = await supabase.from("rehearsal_slots").insert({
-    song_id: songId,
-    starts_at: startsAt,
-    ends_at: endsAt,
-  });
+  const rows = hourlyStartsForDate(date).map((starts_at) => ({ song_id: songId, starts_at }));
+  const { error } = await supabase
+    .from("rehearsal_slots")
+    .upsert(rows, { onConflict: "song_id,starts_at", ignoreDuplicates: true });
   if (error) return { error: error.message };
 
   revalidatePath(`/songs/${songId}`);
   return {};
 }
 
-export async function toggleAvailabilityAction(
-  slotId: string,
-  songId: string
+/** 드래그로 여러 칸을 한 번에 선택했을 때, 그 슬롯들에 대해 내 가능 여부를 한 번에 설정한다. */
+export async function setAvailabilityAction(
+  songId: string,
+  slotIds: string[],
+  available: boolean
 ): Promise<{ error?: string }> {
   const session = await getSession();
   if (!session) return { error: "로그인이 필요해요" };
+  if (slotIds.length === 0) return {};
 
-  if (!isOfficer(session.role) && !(await isSongMember(songId, session.memberId))) {
+  if (!session.isAdmin && !(await isSongMember(songId, session.memberId))) {
     return { error: "이 곡에 참여한 멤버만 응답할 수 있어요" };
   }
 
   const supabase = createServiceClient();
-  const { data: existing, error: existingError } = await supabase
-    .from("availabilities")
-    .select("id")
-    .eq("slot_id", slotId)
-    .eq("member_id", session.memberId)
-    .maybeSingle();
-  if (existingError) throw existingError;
-
-  if (existing) {
-    const { error } = await supabase.from("availabilities").delete().eq("id", existing.id);
-    if (error) throw error;
+  if (available) {
+    const rows = slotIds.map((slot_id) => ({ slot_id, member_id: session.memberId }));
+    const { error } = await supabase
+      .from("availabilities")
+      .upsert(rows, { onConflict: "slot_id,member_id", ignoreDuplicates: true });
+    if (error) return { error: error.message };
   } else {
     const { error } = await supabase
       .from("availabilities")
-      .insert({ slot_id: slotId, member_id: session.memberId });
-    if (error) throw error;
+      .delete()
+      .in("slot_id", slotIds)
+      .eq("member_id", session.memberId);
+    if (error) return { error: error.message };
   }
 
   revalidatePath(`/songs/${songId}`);

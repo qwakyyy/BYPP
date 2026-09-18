@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getSession, isOfficer } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import {
   getSongWithSessions,
   getSongsWithSessions,
@@ -8,24 +8,11 @@ import {
   getAvailabilityMap,
 } from "@/lib/queries";
 import { computeSetlist } from "@/lib/setlist";
+import { buildRehearsalGrid } from "@/lib/rehearsal-grid";
 import RealtimeRefresher from "@/components/RealtimeRefresher";
 import { ClaimButton, UnclaimButton } from "@/components/SessionClaimButton";
-import SongSlotForm from "@/components/SongSlotForm";
-import AvailabilityCell from "@/components/AvailabilityCell";
-
-function formatSlot(startsAt: string, endsAt: string) {
-  const start = new Date(startsAt);
-  const end = new Date(endsAt);
-  const dateFmt = new Intl.DateTimeFormat("ko-KR", {
-    month: "numeric",
-    day: "numeric",
-    weekday: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-  const timeFmt = new Intl.DateTimeFormat("ko-KR", { hour: "2-digit", minute: "2-digit" });
-  return `${dateFmt.format(start)} ~ ${timeFmt.format(end)}`;
-}
+import AddRehearsalDateForm from "@/components/AddRehearsalDateForm";
+import RehearsalHeatmapGrid from "@/components/RehearsalHeatmapGrid";
 
 export default async function SongDetailPage(props: PageProps<"/songs/[id]">) {
   const { id } = await props.params;
@@ -34,7 +21,7 @@ export default async function SongDetailPage(props: PageProps<"/songs/[id]">) {
 
   const session = await getSession();
   const isMemberOfSong = song.sessions.some((s) => s.member_id === session?.memberId);
-  const canManageSchedule = !!session && (isMemberOfSong || isOfficer(session.role));
+  const canManageSchedule = !!session && (isMemberOfSong || session.isAdmin);
 
   const performance = await getCurrentPerformance();
   const schedulingOpen =
@@ -54,6 +41,7 @@ export default async function SongDetailPage(props: PageProps<"/songs/[id]">) {
 
   const slots = isInFinalSetlist ? await getRehearsalSlotsForSong(song.id) : [];
   const availability = await getAvailabilityMap(slots.map((s) => s.id));
+  const grid = buildRehearsalGrid(slots);
 
   return (
     <div className="flex flex-col gap-4">
@@ -115,34 +103,15 @@ export default async function SongDetailPage(props: PageProps<"/songs/[id]">) {
             <p className="text-sm text-gray-500">이 곡의 세션에 참여한 멤버만 볼 수 있어요.</p>
           )}
 
-          {canManageSchedule && (
+          {canManageSchedule && session && (
             <>
-              <div className="flex flex-wrap gap-2">
-                {slots.map((slot) => {
-                  const members = availability[slot.id] ?? [];
-                  return (
-                    <div
-                      key={slot.id}
-                      className="flex flex-col items-center gap-1 rounded border bg-white p-2"
-                    >
-                      <span className="text-xs text-gray-600">
-                        {formatSlot(slot.starts_at, slot.ends_at)}
-                      </span>
-                      <AvailabilityCell
-                        slotId={slot.id}
-                        songId={song.id}
-                        count={members.length}
-                        isMine={!!session && members.includes(session.memberId)}
-                      />
-                    </div>
-                  );
-                })}
-                {slots.length === 0 && (
-                  <p className="text-sm text-gray-500">아직 등록된 후보 시간이 없어요.</p>
-                )}
-              </div>
-
-              <SongSlotForm songId={song.id} />
+              <RehearsalHeatmapGrid
+                songId={song.id}
+                grid={grid}
+                availability={availability}
+                currentMemberId={session.memberId}
+              />
+              <AddRehearsalDateForm songId={song.id} />
             </>
           )}
         </section>

@@ -20,20 +20,27 @@ export default async function MembersPage() {
 
       {generations.map((gen) => {
         const list = byGeneration.get(gen)!;
-        const officers = list.filter((m) => m.role !== "member");
-        const regular = list.filter((m) => m.role === "member");
+        const highlighted = list.filter((m) => m.role !== "member" || m.is_admin);
+        const regular = list.filter((m) => m.role === "member" && !m.is_admin);
 
         return (
           <section key={gen} className="rounded border bg-white p-4">
             <h2 className="mb-3 text-base font-semibold">{gen}기</h2>
 
-            {officers.length > 0 && (
+            {highlighted.length > 0 && (
               <ul className="mb-3 flex flex-col gap-1">
-                {officers.map((m) => (
+                {highlighted.map((m) => (
                   <li key={m.id} className="flex items-center gap-2 text-sm">
-                    <span className="rounded bg-gray-900 px-2 py-0.5 text-xs text-white">
-                      {ROLE_LABEL[m.role]}
-                    </span>
+                    {m.role !== "member" && (
+                      <span className="rounded bg-gray-900 px-2 py-0.5 text-xs text-white">
+                        {ROLE_LABEL[m.role]}
+                      </span>
+                    )}
+                    {m.is_admin && (
+                      <span className="rounded bg-blue-600 px-2 py-0.5 text-xs text-white">
+                        관리자
+                      </span>
+                    )}
                     <span className="font-medium">{m.name}</span>
                     {m.instrument && <span className="text-gray-500">{m.instrument}</span>}
                   </li>

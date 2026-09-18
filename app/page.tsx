@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getCurrentPerformance, getPhaseWindows } from "@/lib/queries";
 import { formatKst } from "@/lib/datetime";
+import { nextTransitionTime } from "@/lib/phase-auto";
 import { PHASE_LABEL } from "@/lib/types";
 
 const PHASE_LINKS: Record<string, { href: string; label: string }> = {
@@ -25,7 +26,7 @@ export default async function DashboardPage() {
 
   const action = PHASE_LINKS[performance.phase];
   const windows = await getPhaseWindows(performance.id);
-  const currentWindow = windows[performance.phase];
+  const nextTime = nextTransitionTime(performance.phase, windows);
 
   return (
     <div className="flex flex-col gap-4">
@@ -37,10 +38,8 @@ export default async function DashboardPage() {
         <p className="mt-2 inline-block rounded bg-gray-100 px-2 py-1 text-sm">
           현재 단계: {PHASE_LABEL[performance.phase]}
         </p>
-        {currentWindow?.endsAt && (
-          <p className="mt-1 text-sm text-gray-500">
-            마감: {formatKst(currentWindow.endsAt)}
-          </p>
+        {nextTime && (
+          <p className="mt-1 text-sm text-gray-500">다음 단계 전환: {formatKst(nextTime)}</p>
         )}
       </div>
 

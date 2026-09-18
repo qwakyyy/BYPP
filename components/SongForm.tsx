@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useActionState } from "react";
 import { submitSongAction, type SubmitSongState } from "@/app/actions/songs";
 import { SESSION_TYPES, VOCAL_SESSION_TYPE } from "@/lib/types";
@@ -8,6 +9,8 @@ const initialState: SubmitSongState = {};
 
 export default function SongForm() {
   const [state, formAction, pending] = useActionState(submitSongAction, initialState);
+  const [customRows, setCustomRows] = useState<number[]>([]);
+  const [nextId, setNextId] = useState(0);
 
   return (
     <form action={formAction} className="flex flex-col gap-3 rounded border bg-white p-4">
@@ -37,18 +40,37 @@ export default function SongForm() {
         </div>
       ))}
 
-      <div className="flex items-center gap-2">
-        <input
-          name="custom_type"
-          placeholder="기타 세션 이름 (선택)"
-          className="w-20 rounded border px-2 py-1 text-sm"
-        />
-        <input
-          name="custom_url"
-          placeholder="악보 링크 (선택)"
-          className="flex-1 rounded border px-2 py-1 text-sm"
-        />
-      </div>
+      {customRows.map((id) => (
+        <div key={id} className="flex items-center gap-2">
+          <input
+            name="custom_type[]"
+            placeholder="기타 세션"
+            className="w-28 rounded border px-2 py-1 text-sm"
+          />
+          <input
+            name="custom_url[]"
+            placeholder="악보 링크 (선택)"
+            className="flex-1 rounded border px-2 py-1 text-sm"
+          />
+          <button
+            type="button"
+            onClick={() => setCustomRows((rows) => rows.filter((r) => r !== id))}
+            className="text-xs text-gray-400 hover:text-gray-600"
+          >
+            삭제
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={() => {
+          setCustomRows((rows) => [...rows, nextId]);
+          setNextId((n) => n + 1);
+        }}
+        className="self-start text-sm text-blue-600 underline"
+      >
+        + 기타 세션 추가
+      </button>
 
       <button
         type="submit"

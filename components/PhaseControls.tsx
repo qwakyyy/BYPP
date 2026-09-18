@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { advancePhaseAction } from "@/app/actions/admin";
-import { PHASE_ORDER, PHASE_LABEL, type Phase } from "@/lib/types";
+import { PHASE_ORDER, PHASE_SHORT_LABEL, type Phase } from "@/lib/types";
 
 export default function PhaseControls({ currentPhase }: { currentPhase: Phase }) {
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +26,7 @@ export default function PhaseControls({ currentPhase }: { currentPhase: Phase })
         }
         className="rounded bg-black px-3 py-2 text-sm text-white disabled:opacity-50"
       >
-        {pending ? "전환 중..." : `다음 단계로: ${PHASE_LABEL[nextPhase]}`}
+        {pending ? "전환 중..." : `다음 단계로: ${PHASE_SHORT_LABEL[nextPhase]}`}
       </button>
       {error && <p className="text-sm text-red-600">{error}</p>}
     </div>

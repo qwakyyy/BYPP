@@ -35,11 +35,11 @@ export async function submitSongAction(
       }
     }
   }
-  const customType = String(formData.get("custom_type") ?? "").trim();
-  if (customType) {
-    const customUrl = String(formData.get("custom_url") ?? "").trim();
-    rows.push({ session_type: customType, sheet_music_url: customUrl || null });
-  }
+  const customTypes = formData.getAll("custom_type[]").map((v) => String(v).trim());
+  const customUrls = formData.getAll("custom_url[]").map((v) => String(v).trim());
+  customTypes.forEach((customType, i) => {
+    if (customType) rows.push({ session_type: customType, sheet_music_url: customUrls[i] || null });
+  });
 
   if (rows.length === 0) return { error: "세션을 최소 1개 이상 선택해주세요" };
 

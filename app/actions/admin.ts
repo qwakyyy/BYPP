@@ -1,16 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getSession, isOfficer, type Role } from "@/lib/auth";
+import { getSession, type Role } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase/server";
 import { getCurrentPerformance } from "@/lib/queries";
 import { kstLocalToIso } from "@/lib/datetime";
 import { PHASE_ORDER, SCHEDULABLE_PHASES, type Phase } from "@/lib/types";
 
-async function requireOfficer() {
+async function requireAdmin() {
   const session = await getSession();
-  if (!session || !isOfficer(session.role)) {
-    throw new Error("회장/부회장만 사용할 수 있어요");
+  if (!session || !session.isAdmin) {
+    throw new Error("관리자만 사용할 수 있어요");
   }
   return session;
 }
@@ -21,7 +21,7 @@ export async function createPerformanceAction(
   _prev: AdminActionState,
   formData: FormData
 ): Promise<AdminActionState> {
-  await requireOfficer();
+  await requireAdmin();
 
   const title = String(formData.get("title") ?? "").trim();
   const eventDate = String(formData.get("event_date") ?? "").trim();
@@ -45,7 +45,7 @@ export async function createPerformanceAction(
 }
 
 export async function advancePhaseAction(nextPhase: Phase): Promise<AdminActionState> {
-  await requireOfficer();
+  await requireAdmin();
 
   const performance = await getCurrentPerformance();
   if (!performance) return { error: "먼저 공연을 만들어주세요" };
@@ -76,17 +76,18 @@ export async function issueInviteCodeAction(
   _prev: IssueInviteState,
   formData: FormData
 ): Promise<IssueInviteState> {
-  await requireOfficer();
+  await requireAdmin();
 
   const code = String(formData.get("code") ?? "").trim();
   const role = String(formData.get("role") ?? "member") as Role;
   const generationRaw = String(formData.get("generation") ?? "").trim();
+  const isAdmin = formData.get("is_admin") === "on";
   if (!code) return { error: "코드를 입력해주세요" };
 
   const supabase = createServiceClient();
   const { error } = await supabase
     .from("invite_codes")
-    .insert({ code, role, generation: generationRaw ? Number(generationRaw) : 1 });
+    .insert({ code, role, generation: generationRaw ? Number(generationRaw) : 1, is_admin: isAdmin });
   if (error) return { error: "발급 실패: " + error.message };
 
   revalidatePath("/admin");
@@ -99,19 +100,17 @@ export async function setPhaseWindowsAction(
   _prev: SetPhaseWindowsState,
   formData: FormData
 ): Promise<SetPhaseWindowsState> {
-  await requireOfficer();
+  await requireAdmin();
 
   const performance = await getCurrentPerformance();
   if (!performance) return { error: "먼저 공연을 만들어주세요" };
 
   const rows = SCHEDULABLE_PHASES.map((phase) => {
     const startsRaw = String(formData.get(`starts_${phase}`) ?? "").trim();
-    const endsRaw = String(formData.get(`ends_${phase}`) ?? "").trim();
     return {
       performance_id: performance.id,
       phase,
       starts_at: startsRaw ? kstLocalToIso(startsRaw) : null,
-      ends_at: endsRaw ? kstLocalToIso(endsRaw) : null,
     };
   });
 

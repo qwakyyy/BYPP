@@ -1,11 +1,14 @@
 -- BYPP 밴드 동아리 웹사이트 스키마
 -- Supabase SQL editor에 그대로 붙여넣어 실행하면 됩니다.
 
+-- role은 "뭐라고 부를지"(회장/부회장/멤버), is_admin은 "관리 페이지를 쓸 수 있는지" — 서로 독립적이다.
+-- (예: 회장이지만 실제 운영은 다른 사람이 맡아서 role=member, is_admin=true로 둘 수 있음)
 create table if not exists members (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   instrument text not null default '',
   role text not null default 'member' check (role in ('president', 'vice_president', 'member')),
+  is_admin boolean not null default false,
   generation int not null default 1,
   created_at timestamptz not null default now()
 );
@@ -13,6 +16,7 @@ create table if not exists members (
 create table if not exists invite_codes (
   code text primary key,
   role text not null check (role in ('president', 'vice_president', 'member')),
+  is_admin boolean not null default false,
   generation int not null default 1,
   note text
 );
@@ -58,12 +62,13 @@ create table if not exists song_sessions (
 );
 
 -- 합주 일정은 공연 전체가 아니라 곡 단위다 (곡마다 참여 멤버가 다르므로).
+-- 항상 정시부터 1시간짜리 후보라 종료 시각은 안 두고 starts_at만 저장한다.
 -- timezone 없는 "동아리 현지 시간"으로 그대로 저장/표시한다 (UTC 변환 버그 방지)
 create table if not exists rehearsal_slots (
   id uuid primary key default gen_random_uuid(),
   song_id uuid not null references songs (id) on delete cascade,
   starts_at timestamp not null,
-  ends_at timestamp not null
+  unique (song_id, starts_at)
 );
 
 create table if not exists availabilities (
@@ -73,8 +78,9 @@ create table if not exists availabilities (
   unique (slot_id, member_id)
 );
 
--- 단계별 일정. 관리자가 설정하면 시작 시각이 지난 뒤 자동으로 다음 단계로 넘어간다
--- (session_signup_phase2의 ends_at은 셋리스트 자동 확정 트리거로도 쓰인다).
+-- 단계별 일정. 각 phase의 시작 시각 = 바로 앞 phase의 종료 시각이라 하나만 저장한다.
+-- scheduling의 starts_at은 session_signup_phase2 종료 + 셋리스트 자동 확정 트리거도 겸한다.
+-- 관리자가 설정하면 시작 시각이 지난 뒤 자동으로 다음 단계로 넘어간다.
 -- KST(+09:00) 오프셋을 포함한 timestamptz로 저장한다 (서버가 UTC로 돌아도 정확히 비교되도록).
 create table if not exists phase_windows (
   id uuid primary key default gen_random_uuid(),
@@ -83,7 +89,6 @@ create table if not exists phase_windows (
     phase in ('song_submission', 'session_signup_phase1', 'session_signup_phase2', 'scheduling')
   ),
   starts_at timestamptz,
-  ends_at timestamptz,
   unique (performance_id, phase)
 );
 
